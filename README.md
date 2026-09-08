@@ -313,7 +313,3 @@ Skipped: 0
 ### Database Relationships
 
 ![Database Foreign Keys](docs/screenshots/08-database.png)
-
-## รายงาน
-
-[ดาวน์โหลดรายงาน Lab 8](docs/Lab08-Report-673380062-2-sec1.pdf)
