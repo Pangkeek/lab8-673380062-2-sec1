@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="th" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><title>รีวิวสินค้า</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><div class="container"><h1>รีวิวสินค้า</h1><h2 th:text="${product.name}"></h2>
+<a class="btn btn-secondary" th:href="@{/products}">กลับรายการสินค้า</a>
+<table class="table"><thead><tr><th>ผู้รีวิว</th><th>คะแนน</th><th>ความเห็น</th><th>วันที่</th><th>จัดการ</th></tr></thead><tbody>
+<tr th:each="r : ${product.reviews}"><td th:text="${r.reviewer}"></td><td th:text="${r.rating} + '/5'"></td><td th:text="${r.comment}"></td><td th:text="${r.reviewDate}"></td>
+<td><form method="post" th:action="@{/products/{id}/reviews/{rid}/delete(id=${product.id},rid=${r.id})}"><button class="btn btn-sm btn-danger">ลบรีวิว</button></form></td></tr>
+<tr th:if="${#lists.isEmpty(product.reviews)}"><td colspan="5">ยังไม่มีรีวิว</td></tr></tbody></table>
+<div class="card"><h2>เพิ่มรีวิว</h2><form method="post" th:object="${review}" th:action="@{/products/{id}/reviews(id=${product.id})}">
+<ul class="alert alert-error" th:if="${#fields.hasErrors('*')}"><li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li></ul>
+<div class="form-group"><label for="reviewer">ชื่อผู้รีวิว</label><input id="reviewer" th:field="*{reviewer}" maxlength="255" required></div>
+<div class="form-group"><label for="rating">คะแนน (1-5)</label><input id="rating" type="number" th:field="*{rating}" min="1" max="5" required></div>
+<div class="form-group"><label for="comment">ความเห็น</label><textarea id="comment" th:field="*{comment}" maxlength="2000"></textarea></div>
+<button class="btn btn-primary">บันทึกรีวิว</button></form></div></div></body></html>

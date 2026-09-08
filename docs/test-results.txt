@@ -1,0 +1,40 @@
+Lab 8 - 673380062-2 SEC 1
+Verified: 2026-09-08
+
+AUTOMATED TESTS
+Spring Boot 3.3.0 / Java 21.0.12 (project release 17)
+H2 PostgreSQL mode, SpringBootTest and MockMvc
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+Maven Surefire result: BUILD SUCCESS
+
+Tests:
+- fullCrudPreservesRelationshipsAndDeletesChildren
+- emptyFirstReviewIsNotPersisted
+- invalidProductAndPartialReviewAreRejected
+- invalidRatingIsRejectedAndMissingProductIs404
+- reviewCannotBeDeletedThroughAnotherProduct
+- allDiscountStrategiesAndRounding
+
+Environment note:
+The sandbox's javac raised AccessDeniedException while resolving a JAR path.
+Main classes were compiled by javac; tests were compiled using Eclipse ECJ
+3.38.0 with -17 and -parameters, then executed with Maven surefire:test.
+Packaging succeeded with Maven package -Dmaven.test.skip=true after the
+compiler issue was isolated. The tests subsequently passed independently.
+The project retains the standard compiler setup for normal user environments.
+
+POSTGRESQL / REAL BROWSER VERIFICATION
+PostgreSQL 18.4, dedicated local lab8shop test database on port 55432.
+Spring Boot app on port 8088; pgAdmin on port 5055.
+- Create product + ProductDetail + first Review: PASS
+- MEMBER 40000 -> 36000.00: PASS
+- Add second Review to same product: PASS
+- Update stock to 8, price to 39000, warranty to 2 Years: PASS
+- SEASONAL 39000 -> 31200.00, both reviews preserved: PASS
+- Three tables, two FKs, UNIQUE detail_id and rating CHECK in pgAdmin: PASS
+- POST delete product: PASS
+- After deletion: products=0, product_details=0, reviews=0: PASS
+
+Screenshots were captured from the actual running app and pgAdmin.
+Create and Update each include top and bottom viewport captures.
+The database snapshot was taken before deletion.
