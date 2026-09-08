@@ -1,49 +1,223 @@
-# Lab 8 - Product Shop
+# Lab 8: Table Relationships - Product Shop
 
-รหัสนักศึกษา **673380062-2**, **SEC 1**  
-ชื่อ Repository สำหรับส่ง: **lab8-673380062-2-sec1**
+รายวิชา CP353002 Principles of Software Design
 
-ระบบ Spring Boot + Thymeleaf + JPA + PostgreSQL ตามโจทย์
-[PANANG6425/LAB08_Table_Relationships](https://github.com/PANANG6425/LAB08_Table_Relationships)
-ใช้ HTML และ CSS จากต้นฉบับ แล้วเพิ่ม Java, validation, หน้าจัดการรีวิว และชุดทดสอบ
+- รหัสนักศึกษา: 673380062-2
+- Section: 1
+- Repository: [lab8-673380062-2-sec1](https://github.com/Pangkeek/lab8-673380062-2-sec1)
+- โจทย์ต้นฉบับ: [LAB08_Table_Relationships](https://github.com/PANANG6425/LAB08_Table_Relationships)
 
-## สิ่งที่ทำได้
+โปรเจกต์นี้เป็นระบบจัดการสินค้า พัฒนาด้วย Spring Boot, Spring Data JPA, Thymeleaf และ PostgreSQL โดยแสดงการใช้งานความสัมพันธ์ระหว่างตารางแบบ One-to-One และ One-to-Many
 
-- CRUD สินค้าพร้อมข้อมูลเสริม ProductDetail แบบ 1:1
-- เพิ่ม/แสดง/ลบรีวิวหลายรายการต่อสินค้าแบบ 1:N
-- ส่วนลด NONE, MEMBER 10%, SEASONAL 20% ด้วย Strategy Pattern
-- แก้ไขสินค้าโดยรักษา detail ID และรีวิวเดิม
-- ลบสินค้าพร้อมรายละเอียดและรีวิวผ่าน JPA cascade
-- ตรวจข้อมูลฝั่งเซิร์ฟเวอร์ รวมคะแนน 1-5 และแสดงข้อผิดพลาดในฟอร์ม
-- ไม่อนุญาตให้ bind Entity ID หรือ FK จากฟอร์ม
+## ความสามารถของระบบ
 
-## วิธีรัน (Windows / PowerShell)
+- เพิ่ม แสดง แก้ไข และลบสินค้า
+- บันทึกข้อมูลเสริมของสินค้า
+- เพิ่มและลบรีวิวสินค้า
+- สินค้าหนึ่งรายการมีรีวิวได้หลายรายการ
+- คำนวณราคาหลังหักส่วนลดด้วย Strategy Pattern
+- ตรวจสอบข้อมูลจากฟอร์มก่อนบันทึก
+- ลบข้อมูลที่เกี่ยวข้องด้วย JPA Cascade
 
-ต้องมี JDK 17 ขึ้นไป และ PostgreSQL เปิดทำงาน
-โปรเจกต์มี Maven Wrapper ไม่ต้องติดตั้ง Maven แยก
+## เทคโนโลยีที่ใช้
 
-1. สร้างฐานข้อมูลด้วย pgAdmin หรือคำสั่ง:
+- Java 17
+- Spring Boot 3.3.0
+- Spring MVC
+- Spring Data JPA
+- Thymeleaf
+- PostgreSQL
+- Maven
+- HTML และ CSS
 
-```powershell
-psql -U postgres -c "CREATE DATABASE lab8shop;"
+## Table Relationships
+
+### One-to-One
+
+สินค้า 1 รายการมีข้อมูลเสริมได้ 1 รายการ
+
+```text
+Product (1) -------- (1) ProductDetail
 ```
 
-2. เปิด PowerShell ในโฟลเดอร์โปรเจกต์ แล้วตั้งรหัสผ่าน PostgreSQL ของตนเอง:
+ตาราง `products` เก็บ Foreign Key ชื่อ `detail_id` ซึ่งอ้างอิง `product_details.id`
 
-```powershell
-$env:DB_PASSWORD="รหัสผ่าน PostgreSQL ของคุณ"
-.\mvnw.cmd spring-boot:run
+```java
+@OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+@JoinColumn(name = "detail_id", unique = true, nullable = false)
+private ProductDetail detail;
 ```
 
-3. เปิด <http://localhost:8080/products>
+ฝั่ง `ProductDetail` ใช้ `mappedBy` เนื่องจากไม่ได้เป็นฝั่งที่เก็บ Foreign Key
 
-ถ้า `psql` ไม่อยู่ใน PATH ให้ใช้ SQL ใน Query Tool ของ pgAdmin:
+```java
+@OneToOne(mappedBy = "detail")
+private Product product;
+```
+
+### One-to-Many
+
+สินค้า 1 รายการมีรีวิวได้หลายรายการ แต่ละรีวิวเป็นของสินค้าเพียง 1 รายการ
+
+```text
+Product (1) -------- (N) Review
+```
+
+ฝั่ง `Product` ใช้ `@OneToMany`
+
+```java
+@OneToMany(
+    mappedBy = "product",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+)
+private List<Review> reviews = new ArrayList<>();
+```
+
+ฝั่ง `Review` เก็บ Foreign Key ชื่อ `product_id`
+
+```java
+@ManyToOne(fetch = FetchType.LAZY, optional = false)
+@JoinColumn(name = "product_id", nullable = false)
+private Product product;
+```
+
+## Database Structure
+
+ระบบประกอบด้วย 3 ตาราง
+
+### products
+
+เก็บข้อมูลหลักของสินค้า
+
+- `id`
+- `name`
+- `category`
+- `brand`
+- `stock`
+- `price`
+- `discount_type`
+- `detail_id`
+
+### product_details
+
+เก็บข้อมูลเสริมของสินค้า
+
+- `id`
+- `description`
+- `warranty`
+- `weight`
+- `dimensions`
+- `manufactured_country`
+
+### reviews
+
+เก็บข้อมูลรีวิวสินค้า
+
+- `id`
+- `reviewer`
+- `rating`
+- `comment`
+- `review_date`
+- `product_id`
+
+คะแนนรีวิวถูกจำกัดให้อยู่ระหว่าง 1 ถึง 5
+
+## Strategy Pattern
+
+ระบบใช้ Strategy Pattern สำหรับคำนวณราคาหลังหักส่วนลด
+
+| ประเภท | ส่วนลด |
+|---|---:|
+| `NONE` | 0% |
+| `MEMBER` | 10% |
+| `SEASONAL` | 20% |
+
+Strategy ที่ใช้ประกอบด้วย
+
+- `DiscountStrategy`
+- `NoDiscountStrategy`
+- `MemberDiscountStrategy`
+- `SeasonalSaleStrategy`
+- `DiscountContext`
+
+ตัวอย่างการคำนวณ
+
+```text
+ราคาปกติ 40,000 บาท
+MEMBER ลด 10%
+ราคาสุทธิ = 40,000 × 0.90 = 36,000 บาท
+```
+
+## SOLID Principles
+
+- **Single Responsibility Principle:** แยก Model, Repository, Service และ Controller ตามหน้าที่
+- **Open/Closed Principle:** สามารถเพิ่ม Discount Strategy ใหม่โดยไม่ต้องแก้ Strategy เดิม
+- **Liskov Substitution Principle:** Strategy แต่ละชนิดสามารถใช้งานผ่าน `DiscountStrategy` ได้
+- **Interface Segregation Principle:** แยก Repository และ Strategy Interface ตามหน้าที่
+- **Dependency Inversion Principle:** Service ขึ้นกับ Repository Interface และรับ Dependency ผ่าน Constructor
+
+## Project Structure
+
+```text
+src/main/java/com/example/demo/
+├── DemoApplication.java
+├── controller/
+│   └── ProductController.java
+├── form/
+│   ├── ProductForm.java
+│   ├── DetailForm.java
+│   └── ReviewForm.java
+├── model/
+│   ├── Product.java
+│   ├── ProductDetail.java
+│   └── Review.java
+├── repository/
+│   ├── ProductRepository.java
+│   ├── ProductDetailRepository.java
+│   └── ReviewRepository.java
+├── service/
+│   └── ProductService.java
+└── strategy/
+    ├── DiscountStrategy.java
+    ├── DiscountContext.java
+    ├── NoDiscountStrategy.java
+    ├── MemberDiscountStrategy.java
+    └── SeasonalSaleStrategy.java
+```
+
+## URL Mappings
+
+| Method | URL | รายละเอียด |
+|---|---|---|
+| GET | `/products` | แสดงรายการสินค้า |
+| GET | `/products/add` | แสดงฟอร์มเพิ่มสินค้า |
+| POST | `/products/save` | บันทึกสินค้า |
+| GET | `/products/edit/{id}` | แสดงฟอร์มแก้ไข |
+| POST | `/products/update/{id}` | บันทึกการแก้ไข |
+| GET | `/products/delete/{id}` | แสดงหน้ายืนยันลบ |
+| POST | `/products/delete/{id}` | ลบสินค้า |
+| GET | `/products/{id}/reviews` | แสดงรีวิวสินค้า |
+| POST | `/products/{id}/reviews` | เพิ่มรีวิว |
+| POST | `/products/{id}/reviews/{reviewId}/delete` | ลบรีวิว |
+
+## การตั้งค่าฐานข้อมูล
+
+สร้างฐานข้อมูล PostgreSQL
 
 ```sql
 CREATE DATABASE lab8shop;
 ```
 
-หากพอร์ตหรือผู้ใช้ต่างจากค่าเริ่มต้น กำหนดก่อนรัน:
+กำหนดค่ารหัสผ่าน PostgreSQL ผ่าน Environment Variable
+
+### PowerShell
+
+```powershell
+$env:DB_PASSWORD="รหัสผ่าน PostgreSQL"
+```
+
+หากต้องการกำหนดค่าการเชื่อมต่อเพิ่มเติม
 
 ```powershell
 $env:DB_URL="jdbc:postgresql://localhost:5432/lab8shop"
@@ -51,74 +225,95 @@ $env:DB_USERNAME="postgres"
 $env:PORT="8080"
 ```
 
-JPA สร้างตารางและ Foreign Key อัตโนมัติด้วย `ddl-auto=update`
-อย่าใส่รหัสผ่านจริงใน Git หรือรายงาน
+ไม่ควรบันทึกรหัสผ่าน PostgreSQL ลงใน GitHub
 
-บน macOS/Linux ใช้ `sh mvnw spring-boot:run` และตั้ง environment variables ตาม shell ที่ใช้
+## วิธีรันโปรเจกต์
 
-## ทดสอบและ build
+### Windows
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+### macOS หรือ Linux
+
+```bash
+./mvnw spring-boot:run
+```
+
+จากนั้นเปิดเว็บไซต์
+
+```text
+http://localhost:8080/products
+```
+
+## การทดสอบ
+
+รันชุดทดสอบด้วยคำสั่ง
+
+### Windows
 
 ```powershell
 .\mvnw.cmd test
-.\mvnw.cmd package
-java -jar target/lab8-673380062-2-sec1-0.0.1-SNAPSHOT.jar
 ```
 
-ชุดทดสอบใช้ H2 ใน PostgreSQL mode จึงไม่ต้องเปิด PostgreSQL เพื่อรัน tests
-แอปตามปกติใช้ PostgreSQL ตามโจทย์
-ผลจริงและข้อจำกัดของสภาพแวดล้อมที่ใช้ทดสอบอยู่ใน `docs/test-results.txt`
+### macOS หรือ Linux
 
-## โครงสร้าง
+```bash
+./mvnw test
+```
+
+ผลการทดสอบ
 
 ```text
-src/main/java/com/example/demo/
-  DemoApplication.java
-  model/        Product, ProductDetail, Review
-  repository/   JpaRepository ทั้งสาม Entity
-  strategy/     interface + strategies + DiscountContext
-  form/         DTO และ validation
-  service/      ProductService และ transactions
-  controller/   ProductController และ HTTP mappings
-src/main/resources/
-  application.properties
-  templates/products/  list, add, edit, delete, reviews
-  static/css/style.css
-src/test/              ชุดทดสอบ 6 กรณี
-docs/                  รายงาน PDF, ภาพหน้าจอ, SQL และผลทดสอบ
+Tests run: 6
+Failures: 0
+Errors: 0
+Skipped: 0
 ```
 
-## ความสัมพันธ์
+ชุดทดสอบครอบคลุม
 
-- `products.detail_id` -> `product_details.id` มี UNIQUE เพื่อบังคับ 1:1
-- `reviews.product_id` -> `products.id` รองรับหลายรีวิวต่อสินค้า
-- ฝั่ง owning ของ 1:N คือ Review ส่วน Product.reviews เป็น inverse ด้วย `mappedBy`
-- `cascade=ALL` + `orphanRemoval=true` จัดการการลบข้อมูลลูกจาก JPA
-- ฐานข้อมูลไม่ได้กำหนด ON DELETE CASCADE; การลบผ่านแอปทำภายใน transaction
+- การเพิ่ม แสดง แก้ไข และลบสินค้า
+- ความสัมพันธ์ระหว่าง Product และ ProductDetail
+- การเพิ่มรีวิวหลายรายการ
+- การรักษารีวิวเดิมหลังแก้ไขสินค้า
+- การตรวจคะแนนรีวิว 1-5
+- การลบข้อมูลลูกด้วย Cascade
+- การคำนวณส่วนลดทุกประเภท
 
-## ไฟล์ส่งและ GitHub
+## ตัวอย่างการทำงาน
 
-- รายงาน: `docs/Lab08-Report-673380062-2-sec1.pdf`
-- ภาพจริง: `docs/screenshots/`
-- SQL snapshot: `docs/database-snapshot.sql` เป็นข้อมูลตัวอย่างก่อนทดสอบลบ ใช้ศึกษาหรือ restore ลงฐานข้อมูลใหม่ว่างเท่านั้น
-- `docs/verify-database.sql` ใช้ดูตารางและ FK ใน pgAdmin
-- `ASSIGNMENT.md` คือโจทย์ต้นฉบับ
+### Create
 
-ยังไม่ได้สร้างหรืออัปโหลด Repository ในบัญชี GitHub ของนักศึกษา
-สร้าง repo ชื่อ `lab8-673380062-2-sec1` โดยเว้นว่าง แล้ว push จากโฟลเดอร์นี้:
+![Create Product](docs/screenshots/01-create.png)
 
-```powershell
-git init -b main
-git add .
-git commit -m "Complete Lab 8 table relationships"
-git remote add origin https://github.com/YOUR_USERNAME/lab8-673380062-2-sec1.git
-git push -u origin main
-```
+![Create Product Detail and Review](docs/screenshots/01b-create-review.png)
 
-เปลี่ยน YOUR_USERNAME เป็นบัญชีของตนเอง และตั้ง Git name/email ก่อน commit หากเครื่องยังไม่เคยตั้งค่า
-จากนั้นส่งลิงก์ repository และ PDF ตามโจทย์
+### Read
 
-## ตัวอย่างข้อมูลสำหรับอธิบายงาน
+![Product List](docs/screenshots/02-read.png)
 
-ใช้ชื่อ `iPhone 15 Pro (673380062-2 SEC 1)` ราคา 40,000 บาท MEMBER จะได้ 36,000 บาท
-เพิ่มรีวิวอีกหนึ่งรายการ แล้วแก้ราคาเป็น 39,000 บาท SEASONAL จะได้ 31,200 บาท
-รีวิวเดิมยังอยู่ครบ หลังลบสินค้าให้ตรวจทั้งสามตารางว่าไม่มีแถวลูกค้าง
+### One-to-Many Reviews
+
+![Product Reviews](docs/screenshots/03-reviews.png)
+
+### Update
+
+![Update Product](docs/screenshots/04-update.png)
+
+![Update Product Detail](docs/screenshots/04b-update-detail.png)
+
+### Delete
+
+![Delete Confirmation](docs/screenshots/06-delete-confirm.png)
+
+![After Delete](docs/screenshots/07-deleted.png)
+
+### Database Relationships
+
+![Database Foreign Keys](docs/screenshots/08-database.png)
+
+## รายงาน
+
+[ดาวน์โหลดรายงาน Lab 8](docs/Lab08-Report-673380062-2-sec1.pdf)
